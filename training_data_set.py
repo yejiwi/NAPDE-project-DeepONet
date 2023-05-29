@@ -7,11 +7,11 @@ Created on Sun Apr 30 14:30:53 2023
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
 
 
 
-# Generate training set (beta, I) by solving SIR using 
+
+# Generate training set (R_0, I) by solving SIS using 
 # Explicit Euler with fixed beta
 # We need u(t), x and G(u(x)) as a training set.
 # which is equivalent to sensor_values,
