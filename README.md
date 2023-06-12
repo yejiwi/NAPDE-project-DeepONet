@@ -6,9 +6,19 @@ DeepONet is an artificial neural network framework to solve partial differential
 
 Instead of jumping right into the problem, we test the DeepONet on nonlinear ODE to get familiar with it. With DeepONet, we will solve the ODE $\frac{dS(x)}{dx} = -s(x)^2 + u(x)$ given $u(x) = x^2 + x$ with an initial condition $s(0) = 0$.
 
-We compare the solution using numerical method with the solution that DeepONet guessed after trainig. 
+We compare the solution using numerical method with the solution that DeepONet predicted after trainig. 
 
+Number of sensors: 100
 
+Number of traning set: 1000
+
+Number of test set: 2000
+
+Learning rate: 0.01
+
+Epochs: 100
+
+![Alt text](/Example.png)
 
 
 
