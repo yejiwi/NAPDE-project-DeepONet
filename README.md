@@ -20,8 +20,14 @@ Epochs: 100
 
 ![Alt text](/Example.png)
 
-
+L2relative error: 0.10766981541574315
 
 # Case1: $R_0(t)$ is constant
+
+![Alt text](/R=1.05.png)
+
+![Alt text](/R=2.1.png)
+
+![Alt text](/R=2.3.png)
 
 # Case2: $R_0(t)$ is time dependent
