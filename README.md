@@ -6,11 +6,9 @@ DeepONet is an artificial neural network framework to solve partial differential
 # How the code works
 First, install deepxde https://github.com/lululxvi/deepxde
 
-Then download all the scripts in this repository.
+Download the scripts in https://github.com/lululxvi/deeponet/tree/8d62345afd39e1df9c2c8c8d0e7c41882b06a9bf/src and the codes in this repository.
 
-First, run trainig_data_set.py to generate training and test data set.
-
-Then run deeponet_pde.py to train and see the result.
+Then, run trainig_data_set.py to generate training and test data set and run deeponet_pde.py after to train and see the result.
 
 
 # Warm-up: Test the code with nonlinear ODE
