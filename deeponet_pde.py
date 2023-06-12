@@ -18,35 +18,53 @@ import config
 
 import matplotlib.pyplot as plt
 
-from training_data_set import X_train, y_train, X_test, y_test, m, num_train, num_test
+from training_data_set import X_train, y_train, X_test, y_test, m, num_train, num_test,T
+
+from training_data_set import t1,t2,t3, I1,I2,I3, R_0_const1,R_0_const2, R_0_const3
 
 
+'''
+In this script, using the training and test set generated in
+training_data_set.py, we train the model and compare its prediction
+with true solution calculated using numerical method.
+'''
 
 
+def test_u_ode(nn, system, T, m, model, data, u, fname, num=m):
+    """Test ODE with trained network"""
 
-def test_u_ode(nn, system, T, m, model, data, u, fname, num=100):
-    """Test ODE"""
     sensors = np.linspace(0, T, num=m)[:, None]
     sensor_values = u(sensors)
+    
+    sensor_values = np.array(sensor_values) 
+    
+    
     x = np.linspace(0, T, num=num)[:, None]
-    X_test = [np.tile(sensor_values.T, (num, 1)), x]
-    y_test = system.eval_s_func(u, x)
+    ####x = np.arange(0, T+1, 1, dtype=int)[:, None]
+    
+    X_Test = [np.tile(sensor_values.T, (num, 1)), x]
+    y_Test = system.eval_s_func(u, x)
     if nn != "opnn":
-        X_test = merge_values(X_test)
-    y_pred = model.predict(data.transform_inputs(X_test))
-    np.savetxt(fname, np.hstack((x, y_test, y_pred)))
-    print("L2relative error:", dde.metrics.l2_relative_error(y_test, y_pred))
+        X_Test = merge_values(X_Test)
+    y_pred = model.predict(data.transform_inputs(X_Test))
+
+    
+    np.savetxt(fname, np.hstack((x, y_Test, y_pred)))
+    print("L2 relative error:", dde.metrics.l2_relative_error(y_Test, y_pred))
+    
+    return X_Test[1], y_pred
 
 
 def ode_system(T):
-    """ODE"""
+    """ODE system we want to find solution"""
 
     def g(s, u, x):
         
     # beta = R_0 * gamma
-    #     
-    # s : Output function, I(t)
+    
     # u : Input function, R_0
+    # s : Output function, I(t), infected
+
     
     
     # Our case: dI/dt = beta * S * I - gamma * I 
@@ -59,7 +77,7 @@ def ode_system(T):
         
         return u * gamma * (1-s) * s - gamma * s
    
-    # Initial value of Infected
+    # Initial value of I(t)
     s0 = [0.1]
     
     
@@ -67,38 +85,26 @@ def ode_system(T):
 
 
 def run(problem, system, space, T, m, nn, net, lr, epochs, num_train, num_test):
+    
     # space_test = GRF(1, length_scale=0.1, N=1000, interp="cubic")      
-    # X_train: beta(t)
-    # y_train: I(t)       
-    global X_train, y_train, X_test, y_test
+    # X_train: R_0(t)
+    # y_train: I(t)    
     
-    ## X_train, y_train = system.gen_operator_data(space, m, num_train)
-
-
+    # Import the data sets 
+    global X_train,y_train,X_test,y_test
     
-    ## X_test, y_test = system.gen_operator_data(space, m, num_test)
+    ##X_train, y_train = system.gen_operator_data(space, m, num_train)
+    ##X_test, y_test = system.gen_operator_data(space, m, num_test)
     
     
     if nn != "opnn":
-        #X_train = merge_values(X_train)
+        X_train = merge_values(X_train)
         X_test = merge_values(X_test)
 
-    # np.savez_compressed("train.npz", X_train0=X_train[0], X_train1=X_train[1], y_train=y_train)
-    # np.savez_compressed("test.npz", X_test0=X_test[0], X_test1=X_test[1], y_test=y_test)
-    # return
-
-    # d = np.load("train.npz")
-    # X_train, y_train = (d["X_train0"], d["X_train1"]), d["y_train"]
-    # d = np.load("test.npz")
-    # X_test, y_test = (d["X_test0"], d["X_test1"]), d["y_test"]
 
     X_test_trim = trim_to_65535(X_test)[0]
     y_test_trim = trim_to_65535(y_test)[0]
     
-
-    
-    plt.show()
-    plt.scatter(X_test_trim[1],y_test_trim)
     
     
     if nn == "opnn": 
@@ -107,66 +113,65 @@ def run(problem, system, space, T, m, nn, net, lr, epochs, num_train, num_test):
         ) 
     else:
         data = dde.data.DataSet(
-            X_train=X_train, y_train=y_train, X_test=X_test_trim, y_test=y_test_trim
+            X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test
         )
     
     model = dde.Model(data, net)
     model.compile("adam", lr=lr, metrics=[mean_squared_error_outlier])
     checker = dde.callbacks.ModelCheckpoint("model/model.ckpt", save_better_only=True, period=10)
-    #....................
+
 
 
     losshistory, train_state = model.train(epochs=epochs, callbacks=[checker])
     print("# Parameters:", np.sum([np.prod(v.get_shape().as_list()) for v in tf.compat.v1.trainable_variables()]))
     dde.saveplot(losshistory, train_state, issave=True, isplot=True)
-    
+
     model.restore("model/model.ckpt-" + str(train_state.best_step), verbose=1)
-    
-    #Safe TEST........................................
     
     safe_test(model, data, X_test, y_test)
 
+
+    # Inputs to test and evaluate trained model
     tests = [
-        (lambda x: x, "x.dat"),
-        (lambda x: np.sin(np.pi * x), "sinx.dat"),
-        (lambda x: np.sin(2 * np.pi * x), "sin2x.dat"),
-        (lambda x: x * np.sin(2 * np.pi * x), "xsin2x.dat"),
+        (lambda x: R_0_const1*np.ones_like(x), "x1.dat", R_0_const1,t1,I1),
+        (lambda x: R_0_const2*np.ones_like(x), "x2.dat", R_0_const2,t2,I2),
+        (lambda x: R_0_const3*np.ones_like(x), "x3.dat", R_0_const3,t3,I3),
+        
     ]
-    for u, fname in tests:
-        if problem == "ode":
-            test_u_ode(nn, system, T, m, model, data, u, fname)
-       
+    
+    for u, fname,R,t,I in tests:
+        
+        x_pred, y_pred = test_u_ode(nn, system, T, m, model, data, u, fname)
+ 
+        plt.figure()
+        plt.plot(x_pred,y_pred, '.', label = 'predict')
+        plt.plot(t,I,'.', label='real')
+        plt.legend()
+        plt.title('%s' %R)
+    
 
-
+    
+    
+    
 def main():
     # Problem:
 
     # - "ode": Antiderivative, Nonlinear ODE, Gravity pendulum
     
-    
     problem = "ode"
     
-    T = 29 # Final time value
+    #T = 59 # Final time value
     
     system = ode_system(T)
     
     
     # Function space
-    # space = FinitePowerSeries(N=100, M=1)
-    # space = FiniteChebyshev(N=20, M=1)
-    # space = GRF(2, length_scale=0.2, N=2000, interp="cubic")  # "lt"
-    space = GRF(T, length_scale=0.2, N=1000, interp="cubic")
-    # space = GRF(T, length_scale=0.2, N=1000 * T, interp="cubic")
+
+    space = GRF(T, length_scale=0.1, N=3000, interp="cubic")
     
-    # Hyperparameters
-    #m = 10 # numer of sensors
-    
-    
-    #num_train = 1000 # number of training set
-    
-    #num_test = 1000 # number of test set
-    lr = 0.005 # learning rate
-    epochs = 200
+
+    lr = 0.01 # learning rate
+    epochs = 100
     
 
 
@@ -181,7 +186,7 @@ def main():
             [dim_x, 40, 40],
             activation,
             initializer,
-            use_bias=True,
+            use_bias=False,
             stacked=False,
         )
     elif nn == "fnn":
@@ -197,4 +202,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
 
