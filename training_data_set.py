@@ -7,186 +7,182 @@ Created on Sun Apr 30 14:30:53 2023
 
 import numpy as np
 import matplotlib.pyplot as plt
+from system import ODESystem 
+from scipy.integrate import solve_ivp
 
 
+# This document generates training and test datset to feed the neural network
+# The training and test set will be directly imported from this script.
+
+#**************Parameters******************
+
+T = 29 # Max time step
+gamma = 0.1 # Recovery rate
+m = 50 # Number of sensors
+num_train = 1000 # Number of training set
+num_test = 1000 # Number of test set
+
+#...............................................
 
 
-# Generate training set (R_0, I) by solving SIS using 
-# Explicit Euler with fixed beta
-# We need u(t), x and G(u(x)) as a training set.
-# which is equivalent to sensor_values,
-# u(t) = sensor_values, where the value of u calcuated at sensor positions 
-# x = points where output functions will be calculated
+def gen_data(T,m,case):
+    
+    '''
+    Generate data for training set by solving equation.
+    '''
+        
+    def dI_dt(t, I, R_0_list, gamma):
+        '''
+        Nonlinear ode equation
+        
+        dI/dt = R_0 * gamma * (1 - I) * I - gamma * I 
+        
+        '''
+        
+        gamma = 0.1 # Recovery rate, 1/(time to recover)
+        
+        # Get the corresponding R_0 value based on the time index
+        R_0 = R_0_list[np.clip(int(round(t)), 0, len(R_0_list) - 1)]  
+        
+        return R_0 * gamma * (1 - I) * I - gamma * I
+    
+    # Define the initial condition of I
+    I0 = 0.1
+    
+    # Define the time span
+    t_span = [0, T]  # Start and end time
+    
+    # Define the time points at which to evaluate the solution
+    t_eval = np.linspace(t_span[0], t_span[1], T+1)
  
-
-
-# G(u(x)) = num_train x 1
-
-np.random.seed(0)
-
-
-# Global parameter
-
-
-def gen_data_const(m,num_train,T):
     
-    
-    gamma = 0.1 # Recovery rate. 1/(recovery days)
-    
-    # Generate random R_0 values
-    R_0_vals = np.random.uniform(low=0.7, high=2.5, size=num_train) 
-    
-    # time list, 0 to 29days
-    dt = 1
-    t = np.arange(0,T,dt)
-
-    I_0 = 0.01 # Initial rate of infected individuals
-    
-    
-    # list of x where I will be evaluated.
-    x_list = np.random.randint(0,29,num_train)
-    
-    # list of I value evaluated at x 
-    I_eval = np.array([])
-
-    for k in range(num_train):
+    if case =='const':
+        # When R_0 is constant over time
+        list_one = np.ones(T+1)
+        R_0_const = np.random.uniform(low=1, high=2.5)
+        R_0_list= list_one*R_0_const
         
-        R_0 = R_0_vals[k]
+    else:
+        # When R_0 is time dependent
+        # Generate the list of R_0 values at each t
+        R_0_list = np.random.uniform(low=1, high=2.5, size=T+1)   # Example values for R_0 at different time points
         
-        # Get the kth value of x in the x_list
-        x = x_list[k]
-          
-        I = np.zeros(len(t))
-
-        I[0] = I_0
-        
-        # Solve the ODE using Explicit Euler. Get the full list of I
-        for j in range(len(t)-1): # -1 because the value is 
-        
-            I[j+1] = I[j] + dt*(R_0 * gamma * (1 - I[j]) * I[j]- gamma * I[j])
-            
-        # Append I value evaluated at x     
-        I_eval = np.append(I_eval,I[x])
     
-    # Sensor values. Since R_0 is constant, just duplicate the first column
-    # m times.
-    sensor_val = np.tile(np.array([R_0_vals]).transpose(), (1, m))
+    # Solve the ODE using the RK4 method
+    sol = solve_ivp(dI_dt, t_span, [I0], method='RK45', t_eval=t_eval, args=(R_0_list, gamma))
     
-    # Resize the x_list so that it has shape for column.
-    x_list = np.resize(x_list, (len(x_list),1))
+    # Extract the solution
+    t = sol.t
+    I = sol.y[0]
     
-    # Get X_training set
-    X_train = [sensor_val, x_list]
+    # Define specific times of interest
+    x = np.random.randint(0,29)
+    
+    # Get the values of I at the specific times of interest
+    I_x = I[x]
     
     
-    # Get y_training set
-    y_train = np.resize(I_eval, (len(I_eval),1))
+    sensors = np.arange(0, T+1, (T+1)/m, dtype = int)
     
-    return X_train, y_train
+    R_0_vals = R_0_list[sensors]
     
-
+    #print(R_0_list)
     
-def gen_data_t(m,num_train,T):
     '''
-    m: number of sensors
-    num_train : number of trainig set
-    dt: time interval
-    T: length of period
+    plt.figure()
+    plt.plot(t,I)
+    plt.title('%s' %R_0_list[0])
     '''
     
-    gamma = 0.1 # Recovery rate. 1/(recovery days)
+    return R_0_vals, x, I_x
+
+
+def train_data(T,m,case,num_train):
     
+    '''
+    Using data from gen_data, build a data set in the format that 
+    the trainig model code requires
+    '''
     
-    m_dt = (T+1)/m # Interval of sensors
+    sensor_values = np.empty((0,m))
+    x_list = np.array([])
+    I_x_list = np.array([])
+    
+    num = 0
+    
+    while num < num_train:
         
-    # Generate sensor values
-    sensors = np.arange(0, T, m_dt, dtype=int)
-    
-    # t_list
-    dt = 1
-    t = np.arange(0,T,dt)
-    
-    I_0 = 0.01 
-    
-    #  at t
-    sensor_val_t = np.array([])
-    
-    # Build R_0 function
-
-    R_0_block = np.zeros((num_train, len(t)))
-            
-    
-    for i in range(num_train):
+        R_0_vals,x,I_x = gen_data(T,m,'const')
         
-        # Generate random values of R_0 for all t
-        R_0_list = np.random.uniform(low=0.7, high=2.5, size=len(t)) 
+        sensor_values = np.vstack((sensor_values,R_0_vals))
+        x_list = np.append(x_list,x)
+        I_x_list = np.append(I_x_list,I_x)
         
-        # Replace each row with random R_0 list
-        R_0_block[i,:] = R_0_list
+        num = num+1
         
-        # Append 
-        for k in sensors:
-            sensor_val_t = np.append(sensor_val_t, R_0_list[k])
-            
-    # transform array to a matrix                    
-    sensor_val_t = np.resize(sensor_val_t,(num_train, m))
+    # Resize the list 
+    x_list = np.resize(x_list, (num_train,1))
+    I_x_list = np.resize(I_x_list, (num_train,1))
     
-    # Create random values of x
-    x_list = np.random.randint(0,29,num_train)
+    # Final training data set 
+    X_train = [sensor_values,x_list]
+    y_train = I_x_list
     
-    I_eval_t = np.array([])
-    
-    for k in range(num_train):
-        
-        R_0 = R_0_block[k,:]
-        
-        x = x_list[k]
-        
-        I = np.zeros(len(t))
+    return  X_train, y_train
 
-        I[0] = I_0
+def gen_test(T):
+    
+    '''
+    Generate solution of ODE to compare with the prediction from model 
+    '''
+    
+    
+    def rhs(t, I, R_0_list, gamma):
+        # Get the corresponding R_0 value based on the time index
+        R_0 = R_0_list[int(t)]  
+        return R_0 * gamma * (1 - I) * I - gamma * I
+    
+    # Initial value of I(t)
+    I0 = 0.1
 
-        for j in range(len(t)-1): # -1 because the value is 
-        
-            I[j+1] = I[j] + dt*(R_0[j] * gamma * (1 - I[j]) * I[j]- gamma * I[j])
-            
-        I_eval_t = np.append(I_eval_t,I[x])   
-        
+    # Define the time span
+    t_span = [0, T]  # Start and end time
     
-    x_list = np.resize(x_list, (len(x_list),1))
-    
-    I_eval_t = np.resize(I_eval_t, (len(I_eval_t),1))
-    
-    # Get X_training set
-    X_train = [sensor_val_t, x_list]
-    
-    
-    # Get y_training set
-    y_train = np.resize(I_eval_t, (len(I_eval_t),1))
-    
-    return X_train, y_train
-    
-num_train = 100
-
-num_test = 100
-    
-m = 10
-
-X_train, y_train = gen_data_t(m, num_train, 29)
-
-X_test, y_test = gen_data_t(m, num_test, 29)
-    
-    
-    
-    
-
-    
-    
-    
+    # Define the time points at which to evaluate the solution
+    t_eval = np.linspace(t_span[0], t_span[1], 100)
 
 
+    # Define the initial condition
+    I0 = 0.1
+    
+    # Define the time span
+    t_span = [0, T]  # Start and end time
+    
+    # Define the time points at which to evaluate the solution
+    t_eval = np.linspace(t_span[0], t_span[1], 100)
+    
+    # Generate the list of  random R_0 values
+    list_one = np.ones(T+1)
+    R_0_const = np.random.uniform(low=1, high=2.5)
+    R_0_list= list_one*R_0_const
+    
+    # Solve the ODE using the RK4 method
+    sol = solve_ivp(rhs, t_span, [I0], method='RK45', t_eval=t_eval, args=(R_0_list, gamma))
+    
+    # Extract the solution
+    t = sol.t
+    I = sol.y[0]
+    
+    return t, I, R_0_const
 
 
+#************************Output
+
+X_train, y_train = train_data(T,m,'const',num_train)
+X_test, y_test = train_data(T,m,'const',num_train)
 
 
-      
+# True solutions to compare with predicted solution
+t1,I1,R_0_const1 = gen_test(T)
+t2,I2,R_0_const2 = gen_test(T)
+t3,I3,R_0_const3 = gen_test(T)
