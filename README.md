@@ -4,11 +4,13 @@ DeepONet is an artificial neural network framework to solve partial differential
 
 
 # How the code works
-First, install deepxde https://github.com/lululxvi/deepxde
+1. Install deepxde https://github.com/lululxvi/deepxde
 
-Download the scripts in https://github.com/lululxvi/deeponet/tree/8d62345afd39e1df9c2c8c8d0e7c41882b06a9bf/src and the codes in this repository.
+2. Download the scripts in https://github.com/lululxvi/deeponet/tree/8d62345afd39e1df9c2c8c8d0e7c41882b06a9bf/src 
 
-Then, run trainig_data_set.py to generate training and test data set and run deeponet_pde.py after to train and see the result.
+3. Download and run trainig_data_set.py to generate training and test data set 
+
+4. Download and run deeponet_pde.py after to train and see the result.
 
 
 # Warm-up: Test the code with nonlinear ODE
@@ -17,7 +19,7 @@ Code: deeponet_pde_ex.py
 
 Instead of jumping right into the problem, we test the DeepONet on nonlinear ODE to get familiar with it. With DeepONet, we will solve the ODE $\frac{dS(x)}{dx} = -s(x)^2 + u(x)$ given $u(x) = x^2 + x$ with an initial condition $s(0) = 0$.
 
-We compare the solution using numerical method with the solution that DeepONet predicted after trainig. 
+We compare the solution using numerical method(LSODA) with the solution that DeepONet predicted after trainig. 
 
 Number of sensors: 100
 
