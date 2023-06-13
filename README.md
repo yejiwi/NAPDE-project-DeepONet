@@ -17,9 +17,9 @@ DeepONet is an artificial neural network framework to solve partial differential
 Code: deeponet_pde_example.py
 
 
-Instead of jumping right into the problem, we test the DeepONet on nonlinear ODE to get familiar with it. With DeepONet, we will solve the ODE $\frac{dS(x)}{dx} = -s(x)^2 + u(x)$ given $u(x) = x^2 + x$ with an initial condition $s(0) = 0$.
+Instead of jumping right into the problem, we test the DeepONet on nonlinear ODE to get familiar with it. With DeepONet, we will solve the ODE $\frac{dS(x)}{dx} = -s(x)^2 + u(x)$ given $u(x) = x^2 + x$, $x\in[0,1]$ with  an initial condition $s(0) = 0$.
 
-We compare the solution using numerical method(LSODA) with the solution that DeepONet predicted after trainig. 
+We compare the solution using numerical method(LSODA) with the solution that DeepONet predicted after training. 
 
 Number of sensors: 100
 
@@ -36,11 +36,31 @@ Epochs: 100
 L2 relative error: 0.10766981541574315
 
 # Case1: $R_0(t)$ is constant
+ODE: $\frac{dI}{dt} = R(x) \gamma  (1-s)  s - \gamma  s$
 
-![Alt text](/R=1.05.png)
+Number of sensors: 30
 
-![Alt text](/R=2.1.png)
+Number of traning set: 10000
 
-![Alt text](/R=2.3.png)
+Number of test set: 11000
+
+Learning rate: 0.01
+
+Epochs: 400
+
+
+
+![Alt text](/R=1.3.png)
+
+L2 relative error: 0.3781961877344248
+
+![Alt text](/R=2.03.png)
+
+
+L2 relative error: 0.036210400064317846
+
+![Alt text](/R=2.12.png)
+
+L2 relative error: 0.06472685408335464
 
 # Case2: $R_0(t)$ is time dependent
