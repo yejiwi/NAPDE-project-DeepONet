@@ -36,7 +36,7 @@ Epochs: 100
 L2 relative error: 0.10766981541574315
 
 # Case1: $R_0(t)$ is constant
-ODE: $\frac{dI}{dt} = R(x) \gamma  (1-s)  s - \gamma  s$
+ODE: $\frac{dI}{dt} = R_0(x) \gamma  (1-I(t))  I(t) - \gamma  I(t)$
 
 Number of sensors: 30
 
