@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 from spaces import FinitePowerSeries, FiniteChebyshev, GRF
-from system import LTSystem, ODESystem, DRSystem, CVCSystem, ADVDSystem
+from system import ODESystem
 from utils import merge_values, trim_to_65535, mean_squared_error_outlier, safe_test
 
 import deepxde as dde
@@ -118,11 +118,11 @@ def run(problem, system, space, T, m, nn, net, lr, epochs, num_train, num_test):
     
     model = dde.Model(data, net)
     model.compile("adam", lr=lr, metrics=[mean_squared_error_outlier])
-    checker = dde.callbacks.ModelCheckpoint("model/model.ckpt", save_better_only=True, period=10)
+    checker = dde.callbacks.ModelCheckpoint("model/model.ckpt", save_better_only=True, period=100)
 
 
 
-    losshistory, train_state = model.train(epochs=epochs, callbacks=[checker])
+    losshistory, train_state = model.train(epochs=epochs, batch_size = 32, callbacks=[checker])
     print("# Parameters:", np.sum([np.prod(v.get_shape().as_list()) for v in tf.compat.v1.trainable_variables()]))
     dde.saveplot(losshistory, train_state, issave=True, isplot=True)
 
@@ -144,10 +144,10 @@ def run(problem, system, space, T, m, nn, net, lr, epochs, num_train, num_test):
         x_pred, y_pred = test_u_ode(nn, system, T, m, model, data, u, fname)
  
         plt.figure()
-        plt.plot(x_pred,y_pred, '.', label = 'predict')
-        plt.plot(t,I,'.', label='real')
+        plt.plot(x_pred,y_pred, label = 'predict')
+        plt.plot(t,I, label='real')
         plt.legend()
-        plt.title('%s' %R)
+        plt.title('R_0 = %s' %R)
     
 
     
@@ -167,11 +167,11 @@ def main():
     
     # Function space
 
-    space = GRF(T, length_scale=0.1, N=3000, interp="cubic")
+    space = GRF(T,kernel="RBF", length_scale=0.2, N=3000, interp="cubic")
     
 
-    lr = 0.01 # learning rate
-    epochs = 100
+    lr = 0.001 # learning rate
+    epochs = 400
     
 
 
@@ -203,4 +203,4 @@ def main():
 if __name__ == "__main__":
     main()
     
-
+    print('done')
