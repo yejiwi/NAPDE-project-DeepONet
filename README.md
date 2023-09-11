@@ -29,11 +29,8 @@ Learning rate: 0.001
 Epochs: 50000
 
 
-L2 relative error: 0.06472685408335464
-
 # Case2: $R_0(t)$ is time dependent
 
-ODE: $\frac{dI}{dt} = R_0(t) \gamma  (1-I(t))  I(t) - \gamma  I(t)$
 
 
 Number of sensors: 100
