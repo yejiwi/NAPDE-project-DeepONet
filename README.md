@@ -25,7 +25,7 @@ Number of traning set: 20000
 Number of test set: 60000
 
 Learning rate: 0.001
-
+ 
 Epochs: 50000
 
 
