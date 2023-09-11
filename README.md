@@ -16,31 +16,34 @@ DeepONet is an artificial neural network framework to solve partial differential
 
 
 # Case1: $R_0(t)$ is constant
-ODE: $\frac{dI}{dt} = R_0(x) \gamma  (1-I(t))  I(t) - \gamma  I(t)$
+ODE: $\frac{dI}{dt} = R_0 \gamma  (1-I(t))  I(t) - \gamma  I(t)$
 
-Number of sensors: 30
+Number of sensors: 100
 
-Number of traning set: 10000
+Number of traning set: 20000
 
-Number of test set: 11000
+Number of test set: 60000
 
-Learning rate: 0.01
+Learning rate: 0.001
 
-Epochs: 400
+Epochs: 50000
 
-
-
-![Alt text](/R=1.3.png)
-
-L2 relative error: 0.3781961877344248
-
-![Alt text](/R=2.03.png)
-
-
-L2 relative error: 0.036210400064317846
-
-![Alt text](/R=2.12.png)
 
 L2 relative error: 0.06472685408335464
 
 # Case2: $R_0(t)$ is time dependent
+
+ODE: $\frac{dI}{dt} = R_0(t) \gamma  (1-I(t))  I(t) - \gamma  I(t)$
+
+
+Number of sensors: 100
+
+Number of traning set: 20000
+
+Number of test set: 60000
+
+Learning rate: 0.001
+
+Epochs: 50000
+
+
